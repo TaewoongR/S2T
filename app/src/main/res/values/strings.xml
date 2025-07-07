@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">S2T</string>
+
+    <string name="finish_app_warning">뒤로버튼 한번 더 누르시면 종료됩니다.</string>
+    <string name="record_screen_title">음성 기록</string>
+    <string name="record_start_button">기록 시작</string>
+    <string name="record_stop_button">기록 중지</string>
+</resources>
