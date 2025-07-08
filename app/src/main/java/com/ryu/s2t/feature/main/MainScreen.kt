@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.ryu.s2t.feature.navigation.MainNavHost
 import com.ryu.s2t.feature.navigation.MainNavigator
-import com.ryu.s2t.feature.navigation.rememberMainNavigator
 
 @Composable
 fun MainScreen(

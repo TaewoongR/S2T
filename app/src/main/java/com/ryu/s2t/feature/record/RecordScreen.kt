@@ -28,9 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,10 +56,6 @@ fun DiaryWritingRoute(
     val uiState by viewModel.state.collectAsState()
     val speechRecognizer = rememberSpeechRecognizer(context)
     val intent = getSttIntent()
-    var tempRecordText by rememberSaveable { mutableStateOf("") }
-    if (uiState.resultText.isNotBlank()) {
-        tempRecordText = uiState.resultText
-    }
     var backPressedTime by remember { mutableLongStateOf(0L) }
 
     BackHandler {
@@ -75,7 +69,6 @@ fun DiaryWritingRoute(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.sendIntent(RecordEvent.ReturnToWritingScreen)
         viewModel.uiEffect.buffer(2).collect { effect ->
             when (effect) {
                 is RecordEffect.StartRecording -> {
@@ -123,7 +116,6 @@ fun DiaryWritingRoute(
 
     DiaryWritingScreen(
         uiState = uiState,
-        tempDiaryText = tempRecordText,
         onBackClick = {
             val currentTime = System.currentTimeMillis()
             if (currentTime - backPressedTime > 2000L) {
@@ -137,7 +129,7 @@ fun DiaryWritingRoute(
             saveTextFileToMediaStore(
                 context = context,
                 text = uiState.resultText,
-                isComplete = { viewModel.sendIntent(RecordEvent.DownloadedAsTxt(it)) },
+                isComplete = { viewModel.sendIntent(RecordEvent.DownloadedAsTxt(it)) }
             )
         },
         onStartRecord = { viewModel.sendIntent(RecordEvent.StartRecording) },
@@ -149,7 +141,6 @@ fun DiaryWritingRoute(
 @Composable
 fun DiaryWritingScreen(
     uiState: RecordState,
-    tempDiaryText: String,
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
     onStartRecord: () -> Unit,
@@ -214,7 +205,7 @@ fun DiaryWritingScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = uiState.resultText.ifBlank { tempDiaryText },
+                    text = uiState.resultText,
                     modifier = Modifier
                         .fillMaxWidth(),
                     style = MaterialTheme.typography.bodyLarge

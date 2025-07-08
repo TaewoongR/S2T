@@ -25,6 +25,7 @@ class VDRecognitionListener(
     override fun onBufferReceived(buffer: ByteArray?) {}
 
     override fun onEndOfSpeech() {
+        Timber.d("End")
         onEnd()
     }
 
@@ -40,6 +41,7 @@ class VDRecognitionListener(
     }
 
     override fun onResults(results: Bundle) {
+        Timber.d("Results: ${results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)}")
         onResult()
     }
 
@@ -52,5 +54,7 @@ class VDRecognitionListener(
         }
     }
 
-    override fun onEvent(eventType: Int, params: Bundle?) {}
+    override fun onEvent(eventType: Int, params: Bundle?) {
+        Timber.d("Event type: $eventType, params: $params")
+    }
 }

@@ -13,7 +13,7 @@ class RecordViewModel @Inject constructor() : BaseViewModel<RecordEvent, RecordS
     RecordState()
 ) {
     @Volatile
-    private var result = ""
+    private var recordCache = StringBuilder()
 
     @Volatile
     private var partialTextFlag: Boolean = false
@@ -33,11 +33,11 @@ class RecordViewModel @Inject constructor() : BaseViewModel<RecordEvent, RecordS
             sendEffect { RecordEffect.ReRecord }
         },
         onVoicePartialExtracted = { recorded ->
-            if (partialTextFlag && recorded[0].isBlank()) {
-                result += currentState.tempText
+            if (partialTextFlag && recorded[0].length < 3) {
+                recordCache.append("${currentState.tempText}. ")
                 sendState {
                     currentState.copy(
-                        resultText = result,
+                        resultText = recordCache.toString(),
                         tempText = recorded[0]
                     )
                 }
@@ -45,7 +45,7 @@ class RecordViewModel @Inject constructor() : BaseViewModel<RecordEvent, RecordS
             } else {
                 sendState {
                     currentState.copy(
-                        resultText = result + recorded[0],
+                        resultText = "$recordCache ${recorded[0]}",
                         tempText = recorded[0]
                     )
                 }
@@ -101,15 +101,11 @@ class RecordViewModel @Inject constructor() : BaseViewModel<RecordEvent, RecordS
                     }
 
                     RecordEvent.ClickBackButton -> clickBackButton()
+
                     RecordEvent.StartRecording -> startRecording()
+
                     RecordEvent.StopRecording -> stopRecording()
-                    RecordEvent.ReturnToWritingScreen -> {
-                        sendState {
-                            currentState.copy(
-                                resultText = result
-                            )
-                        }
-                    }
+
                     is RecordEvent.DownloadedAsTxt -> {
                         if (intent.isDownloaded) {
                             sendEffect { RecordEffect.ShowMessage("텍스트 파일로 저장되었습니다.") }
@@ -136,12 +132,10 @@ class RecordViewModel @Inject constructor() : BaseViewModel<RecordEvent, RecordS
     }
 
     private fun stopRecording() {
-        result = currentState.resultText
         sendState {
             currentState.copy(
                 isRecording = false,
-                isErrorOccurred = false,
-                tempText = ""
+                isErrorOccurred = false
             )
         }
         sendEffect { RecordEffect.StopRecording }

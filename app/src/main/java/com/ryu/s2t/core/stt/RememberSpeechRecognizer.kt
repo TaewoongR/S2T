@@ -15,9 +15,9 @@ fun speechRecognizerSaver(context: Context): Saver<SpeechRecognizer, Unit> {
         },
         restore = {
             // 복원 시 새로운 SpeechRecognizer 객체 생성
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)) {
                 SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-            }else{
+            } else {
                 SpeechRecognizer.createSpeechRecognizer(context)
             }
         }
@@ -27,9 +27,9 @@ fun speechRecognizerSaver(context: Context): Saver<SpeechRecognizer, Unit> {
 @Composable
 fun rememberSpeechRecognizer(context: Context): SpeechRecognizer {
     return rememberSaveable(saver = speechRecognizerSaver(context)) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)) {
             SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-        }else{
+        } else {
             SpeechRecognizer.createSpeechRecognizer(context)
         }
     }
