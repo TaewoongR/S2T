@@ -10,135 +10,144 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecordViewModel @Inject constructor() : BaseViewModel<RecordEvent, RecordState, RecordEffect>(
-    RecordState()
+	RecordState()
 ) {
-    @Volatile
-    private var recordCache = StringBuilder()
+	@Volatile
+	private var recordCache = StringBuilder()
 
-    @Volatile
-    private var partialTextFlag: Boolean = false
+	@Volatile
+	private var partialTextFlag: Boolean = false
 
-    init {
-        reducer()
-    }
+	init {
+		reducer()
+	}
 
-    val recognitionListener = VDRecognitionListener(
-        onResult = {
-            sendState {
-                currentState.copy(
-                    isRecording = true,
-                    isErrorOccurred = true
-                )
-            }
-            sendEffect { RecordEffect.ReRecord }
-        },
-        onVoicePartialExtracted = { recorded ->
-            if (partialTextFlag && recorded[0].length < 3) {
-                recordCache.append("${currentState.tempText}. ")
-                sendState {
-                    currentState.copy(
-                        resultText = recordCache.toString(),
-                        tempText = recorded[0]
-                    )
-                }
-                partialTextFlag = false
-            } else {
-                sendState {
-                    currentState.copy(
-                        resultText = "$recordCache ${recorded[0]}",
-                        tempText = recorded[0]
-                    )
-                }
-            }
-        },
-        onReady = {
-            if (!currentState.isErrorOccurred) {
-                sendEffect { RecordEffect.ShowMessage("녹음을 시작합니다.") }
-            }
-        },
-        onEnd = {
-            partialTextFlag = true
-        },
-        onErrorInt = { errorInt ->
-            when (errorInt) {
-                5, 7 -> {
-                    sendState {
-                        currentState.copy(
-                            isRecording = true,
-                            isErrorOccurred = true
-                        )
-                    }
-                    sendEffect { RecordEffect.ReRecord }
-                }
-                SpeechRecognizer.ERROR_NETWORK -> {
-                    sendState {
-                        currentState.copy(
-                            isRecording = false,
-                            isErrorOccurred = false
-                        )
-                    }
-                    sendEffect { RecordEffect.ShowMessage("네트워크 연결이 필요합니다.") }
-                }
-                else -> {
-                    sendState {
-                        currentState.copy(
-                            isRecording = false,
-                            isErrorOccurred = false
-                        )
-                    }
-                    sendEffect { RecordEffect.ShowMessage("녹화에 문제가 생겼습니다.") }
-                }
-            }
-        }
-    )
+	val recognitionListener = VDRecognitionListener(
+		onResult = {
+			sendState {
+				currentState.copy(
+					isRecording = true,
+					isErrorOccurred = true
+				)
+			}
+			sendEffect { RecordEffect.ReRecord }
+		},
+		onVoicePartialExtracted = { recorded ->
+			val newText = recorded[0].trimStart()
+			if (
+				recorded.size > 1 ||
+				(partialTextFlag && recorded[0].length < 3) ||
+				currentState.tempText.length - recorded[0].length > 8
+			) {
+				recordCache.append(" ${currentState.tempText}")
+				sendState {
+					currentState.copy(
+						resultText = recordCache.toString(),
+						tempText = if (currentState.tempText != newText) newText else "",
+					)
+				}
+				partialTextFlag = false
+			} else {
+				sendState {
+					currentState.copy(
+						resultText = "$recordCache $newText",
+						tempText = newText
+					)
+				}
+			}
+		},
+		onReady = {
+			if (!currentState.isErrorOccurred) {
+				sendEffect { RecordEffect.ShowMessage("녹음을 시작합니다.") }
+			}
+		},
+		onEnd = {
+			partialTextFlag = true
+		},
+		onErrorInt = { errorInt ->
+			when (errorInt) {
+				5, 7 -> {
+					sendState {
+						currentState.copy(
+							isRecording = true,
+							isErrorOccurred = true
+						)
+					}
+					sendEffect { RecordEffect.ReRecord }
+				}
 
-    private fun reducer() {
-        viewModelScope.launch {
-            intent.collect { intent ->
-                when (intent) {
-                    is RecordEvent.RequestRecordPermission -> {
-                        requestRecordPermission(intent.isGranted)
-                    }
+				SpeechRecognizer.ERROR_NETWORK -> {
+					sendState {
+						currentState.copy(
+							isRecording = false,
+							isErrorOccurred = false
+						)
+					}
+					sendEffect { RecordEffect.ShowMessage("네트워크 연결이 필요합니다.") }
+				}
 
-                    RecordEvent.ClickBackButton -> clickBackButton()
+				else -> {
+					sendState {
+						currentState.copy(
+							isRecording = false,
+							isErrorOccurred = false
+						)
+					}
+					sendEffect { RecordEffect.ShowMessage("녹화에 문제가 생겼습니다.") }
+				}
+			}
+		}
+	)
 
-                    RecordEvent.StartRecording -> startRecording()
+	private fun reducer() {
+		viewModelScope.launch {
+			intent.collect { intent ->
+				when (intent) {
+					is RecordEvent.RequestRecordPermission -> {
+						requestRecordPermission(intent.isGranted)
+					}
 
-                    RecordEvent.StopRecording -> stopRecording()
+					RecordEvent.ClickBackButton -> clickBackButton()
 
-                    is RecordEvent.DownloadedAsTxt -> {
-                        if (intent.isDownloaded) {
-                            sendEffect { RecordEffect.ShowMessage("텍스트 파일로 저장되었습니다.") }
-                        } else {
-                            sendEffect { RecordEffect.ShowMessage("텍스트 파일 저장을 실패했습니다.") }
-                        }
-                    }
-                }
-            }
-        }
-    }
+					RecordEvent.StartRecording -> startRecording()
 
-    private fun requestRecordPermission(isGranted: Boolean) {
-        sendState { RecordState(isAudioPermissionGranted = isGranted) }
-    }
+					RecordEvent.StopRecording -> stopRecording()
 
-    private fun clickBackButton() {
-        sendEffect { RecordEffect.NavigateToBack }
-    }
+					is RecordEvent.DownloadedAsTxt -> {
+						if (intent.isDownloaded) {
+							sendEffect { RecordEffect.ShowMessage("텍스트 파일로 저장되었습니다.") }
+						} else {
+							sendEffect { RecordEffect.ShowMessage("텍스트 파일 저장을 실패했습니다.") }
+						}
+					}
+				}
+			}
+		}
+	}
 
-    private fun startRecording() {
-        sendState { currentState.copy(isRecording = true) }
-        sendEffect { RecordEffect.StartRecording }
-    }
+	private fun requestRecordPermission(isGranted: Boolean) {
+		sendState { RecordState(isAudioPermissionGranted = isGranted) }
+	}
 
-    private fun stopRecording() {
-        sendState {
-            currentState.copy(
-                isRecording = false,
-                isErrorOccurred = false
-            )
-        }
-        sendEffect { RecordEffect.StopRecording }
-        sendEffect { RecordEffect.ShowMessage("녹음이 종료되었습니다.") }
-    }
+	private fun clickBackButton() {
+		sendEffect { RecordEffect.NavigateToBack }
+	}
+
+	private fun startRecording() {
+		sendState { currentState.copy(isRecording = true) }
+		sendEffect { RecordEffect.StartRecording }
+	}
+
+	private fun stopRecording() {
+		recordCache.append("${currentState.tempText} ")
+		sendState {
+			currentState.copy(
+				isRecording = false,
+				isErrorOccurred = false,
+				tempText = "",
+			)
+		}
+		sendEffect { RecordEffect.StopRecording }
+		sendEffect { RecordEffect.ShowMessage("녹음이 종료되었습니다.") }
+	}
 }
