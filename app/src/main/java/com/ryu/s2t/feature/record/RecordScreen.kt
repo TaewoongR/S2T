@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +47,7 @@ import com.ryu.s2t.core.stt.rememberSpeechRecognizer
 import com.ryu.s2t.designsystem.component.TopBarTitleText
 import com.ryu.s2t.designsystem.component.VDCircleIconButton
 import kotlinx.coroutines.flow.buffer
+import timber.log.Timber
 
 @Composable
 fun DiaryWritingRoute(
@@ -57,6 +59,19 @@ fun DiaryWritingRoute(
     val speechRecognizer = rememberSpeechRecognizer(context)
     val intent = getSttIntent()
     var backPressedTime by remember { mutableLongStateOf(0L) }
+    var isSpeechRecognizerDestroyed by remember { mutableStateOf(false) }
+
+    fun destroySpeechRecognizer() {
+        if (!isSpeechRecognizerDestroyed) {
+            try {
+                speechRecognizer.destroy()
+            } catch (e: IllegalArgumentException) {
+                // 이미 unbind된 경우 예외가 발생하므로 무시하거나 로그 처리
+                Timber.e(e, "SpeechRecognizer destroy called when service not registered")
+            }
+            isSpeechRecognizerDestroyed = true
+        }
+    }
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
@@ -75,29 +90,31 @@ fun DiaryWritingRoute(
                     if (uiState.isRecording) {
                         speechRecognizer.setRecognitionListener(viewModel.recognitionListener)
                         speechRecognizer.startListening(intent)
+                        isSpeechRecognizerDestroyed = false
                     }
                 }
 
                 is RecordEffect.ReRecord -> {
                     if (uiState.isErrorOccurred) {
                         speechRecognizer.startListening(intent)
+                        isSpeechRecognizerDestroyed = false
                     }
                 }
 
                 is RecordEffect.StopRecording -> {
                     if (!uiState.isRecording) {
                         speechRecognizer.stopListening()
-                        speechRecognizer.destroy()
+                        destroySpeechRecognizer()
                     }
                 }
 
                 is RecordEffect.NavigateToBack -> {
-                    speechRecognizer.destroy()
+                    destroySpeechRecognizer()
                     finishApp()
                 }
 
                 is RecordEffect.NavigateToDiaryDrawing -> {
-                    speechRecognizer.destroy()
+                    destroySpeechRecognizer()
                 }
 
                 is RecordEffect.ShowMessage -> {
