@@ -208,7 +208,7 @@ fun DiaryWritingScreen(
                     text = uiState.resultText,
                     modifier = Modifier
                         .fillMaxWidth(),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
 
