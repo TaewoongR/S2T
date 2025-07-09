@@ -19,6 +19,12 @@ compose-constraint-layout = "1.1.0"
 # Google
 google-material = "1.12.0"
 
+# Google Services
+google-services = "4.4.3"
+
+# Firebase
+firebase = "33.16.0"
+
 # Hilt
 hilt = "2.49"
 
@@ -71,6 +77,12 @@ compose-constraint-layout = { group = "androidx.constraintlayout", name = "const
 # Google
 google-material = { group = "com.google.android.material", name = "material", version.ref = "google-material" }
 
+# google-services
+google-services = { group = "com.google.gms", name = "google-services", version.ref = "google-services" }
+
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase" }
+
 # Hilt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
@@ -101,3 +113,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }

@@ -13,6 +13,9 @@
 *.ap_
 *.aab
 
+# Google-services JSON files
+google-services.json
+
 # Files for the ART/Dalvik VM
 *.dex
 

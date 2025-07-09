@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -18,7 +19,7 @@ android {
         minSdk = 29
         targetSdk = 35
         versionCode = 3
-        versionName = "1.0.3"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -86,6 +87,9 @@ dependencies {
 
     // Google-Material
     implementation(libs.google.material)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
 
     // Hilt
     implementation(libs.hilt.android)
